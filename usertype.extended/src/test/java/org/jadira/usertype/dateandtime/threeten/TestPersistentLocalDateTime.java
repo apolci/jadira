@@ -18,16 +18,29 @@ package org.jadira.usertype.dateandtime.threeten;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.TimeZone;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.Table;
 
+import org.dbunit.DatabaseUnitException;
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.ext.h2.H2Connection;
+import org.dbunit.ext.oracle.OracleConnection;
+import org.hibernate.engine.jdbc.spi.JdbcWrapper;
+import org.hibernate.jdbc.Work;
 import org.jadira.usertype.dateandtime.joda.testmodel.LocalDateTimeJoda;
 import org.jadira.usertype.dateandtime.shared.dbunit.DatabaseCapable;
+import org.jadira.usertype.dateandtime.shared.dbunit.RuntimeDatabaseUnitException;
 import org.jadira.usertype.dateandtime.threeten.testmodel.LocalDateTimeJdk8;
+import org.jadira.usertype.dateandtime.threeten.testmodel.LocalDateTimeJdk8JavaZone;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -43,19 +56,34 @@ public class TestPersistentLocalDateTime extends DatabaseCapable {
 
     private static EntityManagerFactory factory;
 
+	private static TimeZone defaultTimezone;
+
+	private static String userTimezone;
+
     @BeforeClass
     public static void setup() {
         factory = Persistence.createEntityManagerFactory("test1");
+        defaultTimezone = TimeZone.getDefault();
+        userTimezone = System.getProperty("user.timezone");
     }
 
     @AfterClass
     public static void tearDown() {
-        factory.close();
+    	TimeZone.setDefault(defaultTimezone);
+    	System.setProperty("user.timezone", userTimezone);
+    	factory.close();
+    }
+    
+    @After
+    public void cleanTables() {
+		EntityManager manager = factory.createEntityManager();
+		manager.getTransaction().begin();
+		manager.createNativeQuery("delete " + LocalDateTimeJdk8JavaZone.class.getAnnotation(Table.class).name()).executeUpdate();
+		manager.getTransaction().commit();
     }
 
     @Test
     public void testPersist() {
-
         EntityManager manager = factory.createEntityManager();
 
         manager.getTransaction().begin();
@@ -89,6 +117,138 @@ public class TestPersistentLocalDateTime extends DatabaseCapable {
         }
 
         verifyDatabaseTable(manager, LocalDateTimeJdk8.class.getAnnotation(Table.class).name());
+
+        manager.close();
+    }
+    
+	protected void clearTable(final EntityManager manager, final String tableName) throws RuntimeDatabaseUnitException {
+
+		manager.createNativeQuery("delete table " + tableName);
+
+	}
+
+    
+    
+    @Test
+    public void testPersistWithTimezoneZurich() {
+    	System.setProperty("user.timezone", "Europe/Zurich");
+    	TimeZone.setDefault(TimeZone.getTimeZone("Europe/Zurich"));
+        EntityManager manager = factory.createEntityManager();
+
+        manager.getTransaction().begin();
+
+        for (int i = 0; i < localDateTimes.length; i++) {
+
+            LocalDateTimeJdk8JavaZone item = new LocalDateTimeJdk8JavaZone();
+            item.setId(i);
+            item.setName("test_" + i);
+            item.setLocalDateTime(localDateTimes[i]);
+
+            manager.persist(item);
+        }
+
+        manager.flush();
+
+        manager.getTransaction().commit();
+
+        manager.close();
+
+        manager = factory.createEntityManager();
+
+        for (int i = 0; i < localDateTimes.length; i++) {
+
+            LocalDateTimeJdk8JavaZone item = manager.find(LocalDateTimeJdk8JavaZone.class, Long.valueOf(i));
+
+            assertNotNull(item);
+            assertEquals(i, item.getId());
+            assertEquals("test_" + i, item.getName());
+            assertEquals(localDateTimes[i], item.getLocalDateTime());
+        }
+
+        verifyDatabaseTable(manager, LocalDateTimeJdk8JavaZone.class.getAnnotation(Table.class).name());
+
+        manager.close();
+    }
+    
+    
+    @Test
+    public void testPersistWithTimezone1() {
+    	System.setProperty("user.timezone", "+1");
+    	TimeZone.setDefault(TimeZone.getTimeZone("+1"));
+        EntityManager manager = factory.createEntityManager();
+
+        manager.getTransaction().begin();
+
+        for (int i = 0; i < localDateTimes.length; i++) {
+
+            LocalDateTimeJdk8JavaZone item = new LocalDateTimeJdk8JavaZone();
+            item.setId(i);
+            item.setName("test_" + i);
+            item.setLocalDateTime(localDateTimes[i]);
+
+            manager.persist(item);
+        }
+
+        manager.flush();
+
+        manager.getTransaction().commit();
+
+        manager.close();
+
+        manager = factory.createEntityManager();
+
+        for (int i = 0; i < localDateTimes.length; i++) {
+
+            LocalDateTimeJdk8JavaZone item = manager.find(LocalDateTimeJdk8JavaZone.class, Long.valueOf(i));
+
+            assertNotNull(item);
+            assertEquals(i, item.getId());
+            assertEquals("test_" + i, item.getName());
+            assertEquals(localDateTimes[i], item.getLocalDateTime());
+        }
+
+        verifyDatabaseTable(manager, LocalDateTimeJdk8JavaZone.class.getAnnotation(Table.class).name());
+
+        manager.close();
+    }
+    
+    @Test
+    public void testPersistWithTimezoneZ() {
+    	System.setProperty("user.timezone", "Z");
+    	TimeZone.setDefault(TimeZone.getTimeZone("Z"));
+        EntityManager manager = factory.createEntityManager();
+
+        manager.getTransaction().begin();
+
+        for (int i = 0; i < localDateTimes.length; i++) {
+
+            LocalDateTimeJdk8JavaZone item = new LocalDateTimeJdk8JavaZone();
+            item.setId(i);
+            item.setName("test_" + i);
+            item.setLocalDateTime(localDateTimes[i]);
+
+            manager.persist(item);
+        }
+
+        manager.flush();
+
+        manager.getTransaction().commit();
+
+        manager.close();
+
+        manager = factory.createEntityManager();
+
+        for (int i = 0; i < localDateTimes.length; i++) {
+
+            LocalDateTimeJdk8JavaZone item = manager.find(LocalDateTimeJdk8JavaZone.class, Long.valueOf(i));
+
+            assertNotNull(item);
+            assertEquals(i, item.getId());
+            assertEquals("test_" + i, item.getName());
+            assertEquals(localDateTimes[i], item.getLocalDateTime());
+        }
+
+        verifyDatabaseTable(manager, LocalDateTimeJdk8JavaZone.class.getAnnotation(Table.class).name());
 
         manager.close();
     }
