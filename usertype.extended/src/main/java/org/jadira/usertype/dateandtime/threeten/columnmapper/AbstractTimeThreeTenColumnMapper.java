@@ -15,6 +15,7 @@
  */
 package org.jadira.usertype.dateandtime.threeten.columnmapper;
 
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -24,11 +25,11 @@ import org.jadira.usertype.spi.shared.AbstractTimeColumnMapper;
 import org.jadira.usertype.spi.shared.DatabaseZoneConfigured;
 import org.jadira.usertype.spi.shared.DstSafeTimeType;
 
-public abstract class AbstractTimeThreeTenColumnMapper<T> extends AbstractTimeColumnMapper<T> implements DatabaseZoneConfigured<ZoneOffset> {
+public abstract class AbstractTimeThreeTenColumnMapper<T> extends AbstractTimeColumnMapper<T> implements DatabaseZoneConfigured<ZoneId> {
 
     private static final long serialVersionUID = -7670411089210984705L;
 	
-    private ZoneOffset databaseZone = ZoneOffset.of("Z");
+    private ZoneId databaseZone = ZoneOffset.of("Z");
     
 	public AbstractTimeThreeTenColumnMapper() {
 	}
@@ -39,11 +40,11 @@ public abstract class AbstractTimeThreeTenColumnMapper<T> extends AbstractTimeCo
 
     
     @Override
-    public void setDatabaseZone(ZoneOffset databaseZone) {
+    public void setDatabaseZone(ZoneId databaseZone) {
         this.databaseZone = databaseZone;
     }
 
-    protected ZoneOffset getDatabaseZone() {
+    protected ZoneId getDatabaseZone() {
         return databaseZone;
     }
 	
@@ -62,7 +63,7 @@ public abstract class AbstractTimeThreeTenColumnMapper<T> extends AbstractTimeCo
     	return new DstSafeTimeType(cal);
     }
 
-	private Calendar resolveCalendar(ZoneOffset databaseZone) {
+	private Calendar resolveCalendar(ZoneId databaseZone) {
 		
 		String id = databaseZone.getId();
 		if (Arrays.binarySearch(TimeZone.getAvailableIDs(), id) != -1) {

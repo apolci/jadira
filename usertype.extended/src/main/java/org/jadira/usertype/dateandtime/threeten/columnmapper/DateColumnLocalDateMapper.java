@@ -22,7 +22,6 @@ import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -38,7 +37,7 @@ public class DateColumnLocalDateMapper extends AbstractDateThreeTenColumnMapper<
 	public DateColumnLocalDateMapper() {
 	}
 
-	public DateColumnLocalDateMapper(ZoneOffset databaseZone) {
+	public DateColumnLocalDateMapper(ZoneId databaseZone) {
 		super(databaseZone);
 	}
     

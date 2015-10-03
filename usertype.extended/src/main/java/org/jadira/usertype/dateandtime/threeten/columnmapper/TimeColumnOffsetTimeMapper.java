@@ -21,6 +21,7 @@ import java.sql.Time;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -28,15 +29,15 @@ import java.time.format.DateTimeFormatterBuilder;
 import org.jadira.usertype.spi.shared.DatabaseZoneConfigured;
 import org.jadira.usertype.spi.shared.JavaZoneConfigured;
 
-public class TimeColumnOffsetTimeMapper extends AbstractTimeThreeTenColumnMapper<OffsetTime> implements DatabaseZoneConfigured<ZoneOffset>, JavaZoneConfigured<ZoneOffset> {
+public class TimeColumnOffsetTimeMapper extends AbstractTimeThreeTenColumnMapper<OffsetTime> implements DatabaseZoneConfigured<ZoneId>, JavaZoneConfigured<ZoneId> {
 
     private static final long serialVersionUID = 6734385103313158326L;
 
     public static final DateTimeFormatter LOCAL_TIME_FORMATTER = new DateTimeFormatterBuilder().appendPattern("HH:mm:ss").toFormatter();
 
-    private ZoneOffset databaseZone = ZoneOffset.UTC;
+    private ZoneId databaseZone = ZoneOffset.UTC;
 
-    private ZoneOffset javaZone = null;
+    private ZoneId javaZone = null;
 
 	public TimeColumnOffsetTimeMapper() {
 	}
@@ -54,12 +55,12 @@ public class TimeColumnOffsetTimeMapper extends AbstractTimeThreeTenColumnMapper
     @Override
     public OffsetTime fromNonNullValue(Time value) {
 
-    	ZoneOffset currentDatabaseZone = databaseZone == null ? getDefault() : databaseZone;
+    	ZoneOffset currentDatabaseZone = (databaseZone == null ? getDefault() : databaseZone).getRules().getOffset(Instant.EPOCH);
         
 //    	int adjustment = TimeZone.getDefault().getOffset(value.getTime()) - (currentDatabaseZone.getRules().getOffset(LocalDateTime.now()).getTotalSeconds() * MILLIS_IN_SECOND);
         
         OffsetDateTime dateTime = Instant.ofEpochMilli(value.getTime()).atOffset(currentDatabaseZone);
-        return dateTime.toOffsetTime().withOffsetSameInstant(javaZone);
+        return dateTime.toOffsetTime().withOffsetSameInstant(javaZone.getRules().getOffset(Instant.EPOCH));
     }
 
     @Override
@@ -70,44 +71,44 @@ public class TimeColumnOffsetTimeMapper extends AbstractTimeThreeTenColumnMapper
     @Override
     public Time toNonNullValue(OffsetTime value) {
 
-        ZoneOffset currentDatabaseZone = databaseZone == null ? getDefaultZoneOffset() : databaseZone;
+        ZoneOffset currentDatabaseZone = (databaseZone == null ? getDefaultZoneOffset() : databaseZone).getRules().getOffset(Instant.EPOCH);
 
         final OffsetTime adjustedValue = value.withOffsetSameInstant(currentDatabaseZone);
 
         return Time.valueOf(LOCAL_TIME_FORMATTER.format(adjustedValue));
     }
     
-    private static ZoneOffset getDefault() {
+    private static ZoneId getDefault() {
 
-    	ZoneOffset zone = null;
+    	ZoneId zone = null;
         try {
             try {
                 String id = System.getProperty("user.timezone");
                 if (id != null) {
-                    zone = ZoneOffset.of(id);
+                    zone = ZoneId.of(id);
                 }
             } catch (RuntimeException ex) {
                 zone = null;
             }
             if (zone == null) {
-                zone = ZoneOffset.of(java.util.TimeZone.getDefault().getID());
+                zone = ZoneId.of(java.util.TimeZone.getDefault().getID());
             }
         } catch (RuntimeException ex) {
             zone = null;
         }
         if (zone == null) {
-            zone = ZoneOffset.of("Z");
+            zone = ZoneId.of("Z");
         }
         return zone;
     }
     
     @Override
-    public void setDatabaseZone(ZoneOffset databaseZone) {
+    public void setDatabaseZone(ZoneId databaseZone) {
         this.databaseZone = databaseZone;
     }
     
     @Override
-    public void setJavaZone(ZoneOffset javaZone) {
+    public void setJavaZone(ZoneId javaZone) {
         this.javaZone = javaZone;
     }
         

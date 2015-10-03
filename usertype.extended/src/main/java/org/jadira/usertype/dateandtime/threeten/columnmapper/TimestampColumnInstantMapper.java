@@ -17,6 +17,7 @@ package org.jadira.usertype.dateandtime.threeten.columnmapper;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -24,7 +25,7 @@ import java.time.temporal.ChronoField;
 
 import org.jadira.usertype.spi.shared.DatabaseZoneConfigured;
 
-public class TimestampColumnInstantMapper extends AbstractTimestampThreeTenColumnMapper<Instant> implements DatabaseZoneConfigured<ZoneOffset> {
+public class TimestampColumnInstantMapper extends AbstractTimestampThreeTenColumnMapper<Instant> implements DatabaseZoneConfigured<ZoneId> {
 
     private static final long serialVersionUID = -7670411089210984705L;
 
@@ -34,7 +35,7 @@ public class TimestampColumnInstantMapper extends AbstractTimestampThreeTenColum
 		super();
 	}
 
-	public TimestampColumnInstantMapper(ZoneOffset databaseZone) {
+	public TimestampColumnInstantMapper(ZoneId databaseZone) {
 		super(databaseZone);
 	}
     

@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -33,7 +34,7 @@ import org.jadira.usertype.spi.shared.JavaZoneConfigured;
 /**
  * Maps a precise datetime column for storage. The UTC Zone will be used to store the value
  */
-public class TimestampColumnOffsetTimeMapper extends AbstractTimestampThreeTenColumnMapper<OffsetTime> implements DatabaseZoneConfigured<ZoneOffset>, JavaZoneConfigured<ZoneOffset> {
+public class TimestampColumnOffsetTimeMapper extends AbstractTimestampThreeTenColumnMapper<OffsetTime> implements DatabaseZoneConfigured<ZoneId>, JavaZoneConfigured<ZoneId> {
 
     private static final long serialVersionUID = -7670411089210984705L;
 
@@ -42,13 +43,13 @@ public class TimestampColumnOffsetTimeMapper extends AbstractTimestampThreeTenCo
 
 	private static final int MILLIS_IN_SECOND = 1000;
 
-    private ZoneOffset javaZone = null;
+    private ZoneId javaZone = null;
 
 	public TimestampColumnOffsetTimeMapper() {
 		super();
 	}
 
-	public TimestampColumnOffsetTimeMapper(ZoneOffset databaseZone, ZoneOffset javaZone) {
+	public TimestampColumnOffsetTimeMapper(ZoneId databaseZone, ZoneId javaZone) {
 		super(databaseZone);
 		this.javaZone = javaZone;
 	}
@@ -61,8 +62,8 @@ public class TimestampColumnOffsetTimeMapper extends AbstractTimestampThreeTenCo
     @Override
     public OffsetTime fromNonNullValue(Timestamp value) {
     	
-        ZoneOffset currentDatabaseZone = getDatabaseZone() == null ? getDefaultZoneOffset() : getDatabaseZone();
-        ZoneOffset currentJavaZone = javaZone == null ? getDefaultZoneOffset() : javaZone;
+        ZoneOffset currentDatabaseZone = (getDatabaseZone() == null ? getDefaultZoneOffset() : getDatabaseZone()).getRules().getOffset(Instant.EPOCH);
+        ZoneOffset currentJavaZone = (javaZone == null ? getDefaultZoneOffset() : javaZone).getRules().getOffset(Instant.EPOCH);
 
         OffsetDateTime dateTime = OffsetDateTime.ofInstant(Instant.ofEpochMilli(value.getTime()), currentDatabaseZone);
         dateTime = dateTime.with(ChronoField.NANO_OF_SECOND, value.getNanos()).withOffsetSameInstant(currentJavaZone);
@@ -87,12 +88,12 @@ public class TimestampColumnOffsetTimeMapper extends AbstractTimestampThreeTenCo
     }
 
     @Override
-    public void setJavaZone(ZoneOffset javaZone) {
+    public void setJavaZone(ZoneId javaZone) {
         this.javaZone = javaZone;
     }
         
 	@Override
-	public ZoneOffset parseZone(String zoneString) {
-		return ZoneOffset.of(zoneString);
+	public ZoneId parseZone(String zoneString) {
+		return ZoneId.of(zoneString);
 	}		
 }
